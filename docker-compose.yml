@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+
+  grafana:
+    restart: always
+    container_name: grafana
+    image: grafana/grafana:6.2.1
+    ports:
+      - 3000:3000
+    volumes:
+      - grafanadata:/var/lib/grafana
+
+  prometheus:
+    restart: always
+    container_name: prometheus
+    image: prom/prometheus:v2.10.0
+    privileged: true
+    volumes:
+      - ./configuration/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheusdata:/prometheus
+
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-admin-api'
+      - '--web.enable-lifecycle'
+    ports:
+      - 9090:9090
+
+  node:
+    restart: always
+    container_name: node
+    image: prom/node-exporter:v0.18.0
+    ports:
+      - 9100:9100
+
+volumes:
+  grafanadata:
+  prometheusdata:
