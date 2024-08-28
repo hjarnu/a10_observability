@@ -5,6 +5,7 @@ This repository contains a setup for a monitoring stack using Docker containers.
 1. **Prometheus**: For scraping and storing metrics.
 2. **Grafana**: For visualizing and alerting based on metrics.
 3. **Grafana Image Renderer**: For rendering graphs as images, for alerts.
+4. Prometheus exporters https://github.com/a10networks/PrometheusExporter/blob/master/acos_exporter.py
 
 Additionally, there is a Python script included for automating the update of Prometheus configuration by fetching zone details from an external API (A10 Networks).
 
