@@ -22,7 +22,7 @@
       "args": [
         "--no-sandbox"
       ],
-      "ignoresHttpsErrors": false,
+      "ignoresHttpsErrors": true,
   
       "timezone": "Asia/Almaty",
       "acceptLanguage": null,
