@@ -3,8 +3,13 @@ import json
 import os
 import yaml
 
-#Prompt for credentials
-username = "username"
+# Custom YAML dumper to prevent YAML anchors
+class NoAliasDumper(yaml.SafeDumper):
+    def ignore_aliases(self, data):
+        return True
+
+# Prompt for credentials
+username = "user"
 password = "password"
 
 # URLs for authentication, zone details, and logoff
@@ -22,11 +27,10 @@ auth_payload = json.dumps({
     "credentials": {
         "username": username,
         "password": password
-    }           
+    }
 })
 
 # File to save the results
-output_file = ""
 prometheus_config_file = "./configuration/prometheus/prometheus.yml"
 
 # Authenticate to get the authorization signature
@@ -35,7 +39,7 @@ auth_response = requests.post(auth_url, headers=auth_headers, data=auth_payload,
 if auth_response.status_code == 200:
     auth_data = auth_response.json()
     signature = auth_data["authresponse"]["signature"]
-    
+
     # Headers for the subsequent requests
     headers = {
         "Content-Type": "application/json",
@@ -51,63 +55,24 @@ if auth_response.status_code == 200:
         data = response.json()
         zones = [zone['zone-name'] for zone in data.get('zone-list', [])]
 
+        # Generate the new API endpoint values
         api_endpoint_value = [f"/ddos/dst/zone/{zone}/stats" for zone in zones]
 
-        prometheus_config = {
-            'scrape_configs': [
-                {   'job_name': 'a10-tps-device-1',
-                    'scheme': 'http',
-                    'metrics_path': '/metrics',
-                    'scrape_interval': '15s',
-                    'static_configs': [
-                        {
-                            'targets': ['exporter:port']
-                        }
-                    ],
-                    'params': {
-                                'host_ip': ["a10"],
-                                'api_endpoint': api_endpoint_value
-                    }
-                },
-                {
-                    'job_name': 'a10-tps-device-2',
-                    'scheme': 'http',
-                    'metrics_path': '/metrics',
-                    'scrape_interval': '15s',
-                    'static_configs': [
-                        {
-                            'targets': ['exporter:port']
-                        }
-                    ],
-                    'params': {
-                                'host_ip': ["a10"],
-                                'api_endpoint': [f"/ddos/dst/zone/{zone}/stats" for zone in zones]
-                    }
-                },
-                {
-                    'job_name': 'a10-tps-akto-mitigator',
-                    'scheme': 'http',
-                    'metrics_path': '/metrics',
-                    'scrape_interval': '15s',
-                    'static_configs': [
-                        {
-                            'targets': ['exporter:port']
-                        }
-                    ],
-                    'params': {
-                                'host_ip': ["a10"],
-                                'api_endpoint': [f"/ddos/dst/zone/{zone}/stats" for zone in zones]
-                    }
-                }
-            ]
-        }
-        
-        # Write the configuration to the Prometheus file
+        # Load the existing Prometheus configuration
+        with open(prometheus_config_file, 'r') as file:
+            prometheus_config = yaml.safe_load(file)
+
+        # Update the configuration
+        for job in prometheus_config.get('scrape_configs', []):
+            if job.get('job_name', '').startswith('a10-tps'):
+                job['params']['api_endpoint'] = api_endpoint_value
+
+        # Write the updated configuration to the file
         with open(prometheus_config_file, 'w') as file:
-            yaml.dump(prometheus_config, file, default_flow_style=False)
-        
+            yaml.dump(prometheus_config, file, default_flow_style=False,Dumper=NoAliasDumper)
+
         # Reload Prometheus to apply the new configuration
-        os.system("curl -X POST http://localhost:9091-/reload")
+        os.system("curl -X POST http://localhost:9091/-/reload")
 
         print("Prometheus configuration updated and reloaded successfully.")
     else:
