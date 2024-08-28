@@ -22,7 +22,7 @@ services:
       - '--web.enable-lifecycle'
       - '--storage.tsdb.retention.time=30d'
     ports:
-      - 9091:9090
+      - 9090:9090
 
   grafana:
     image: grafana/grafana:11.1.3
