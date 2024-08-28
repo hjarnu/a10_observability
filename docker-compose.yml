@@ -49,11 +49,15 @@ services:
       - GF_RENDERING_CALLBACK_URL=https://grafana:3001/
       - GF_LOG_FILTERS=rendering:debug
       - GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE=true
+      - GF_DATE_FORMATS_DEFAULT_TIMEZONE=Asia/Almaty
   renderer:
     restart: always
     image: grafana/grafana-image-renderer:latest
+    volumes:
+      - ./configuration/renderer/config.json:/usr/src/app/config.json
     environment:
       - IGNORE_HTTPS_ERRORS=true
       - GF_RENDERING_IGNORE_HTTPS_ERRORS=true
+      - BROWSER_TZ=Asia/Almaty
     ports:
       - 8081:8081
