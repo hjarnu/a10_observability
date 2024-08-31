@@ -65,6 +65,13 @@ services:
       - GF_RENDERING_IGNORE_HTTPS_ERRORS=true
       - BROWSER_TZ=Asia/Aqtobe
       - GF_PLUGIN_RENDERING_TIMEZONE=Asia/Aqtobe
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200M
+        reservations:
+          memory: 200M
     volumes:
       - ./configuration/renderer/config.json:/usr/src/app/config.json
     ports:
@@ -76,28 +83,49 @@ services:
     restart: unless-stopped
     container_name: exporter-detector-prod
     image: test-prometheus-exporter
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200M
+        reservations:
+          memory: 200M
     volumes:
       - ./configuration/exporter-detector/config.yml:/app/config.yml
     networks:
-      test_stack_network:
+      monitoring_network:
         ipv4_address: 10.10.10.5
   exporter-asta:
     restart: unless-stopped
     container_name: exporter-asta-prod
     image: test-prometheus-exporter
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200M
+        reservations:
+          memory: 200M
     volumes:
       - ./configuration/exporter-asta/config.yml:/app/config.yml
     networks:
-      test_stack_network:
+      monitoring_network:
         ipv4_address: 10.10.10.6
   exporter-akto:
     restart: unless-stopped
     container_name: exporter-akto-prod
     image: test-prometheus-exporter
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200M
+        reservations:
+          memory: 200M
     volumes:
       - ./configuration/exporter-akto/config.yml:/app/config.yml
     networks:
-      test_stack_network:
+      monitoring_network:
         ipv4_address: 10.10.10.7
 networks:
   monitoring_network:
