@@ -1,11 +1,11 @@
 # Monitoring Stack with Prometheus, Grafana, and Renderer
 
-This repository contains a setup for a monitoring stack using Docker containers. The stack includes:
+This repository contains a setup for a monitoring of A10 Networks devices using Docker containers. The stack includes:
 
 1. **Prometheus**: For scraping and storing metrics.
 2. **Grafana**: For visualizing and alerting based on metrics.
 3. **Grafana Image Renderer**: For rendering graphs as images, for alerts.
-4. **Prometheus exporters**: For scraping metrics from A10 devices. The full code is located here: https://github.com/a10networks/PrometheusExporter/blob/master/acos_exporter.py
+4. **Prometheus exporters**: For scraping metrics from ACOS devices below version 5.2.0. The full code is located here: https://github.com/a10networks/PrometheusExporter/blob/master/acos_exporter.py
 
 Additionally, there is a Python script included for automating the update of Prometheus configuration by fetching zone details from an A10 API.
 
@@ -20,7 +20,7 @@ Additionally, there is a Python script included for automating the update of Pro
 1. **Clone the Repository:**
 
    ```bash
-   git clone https://github.com/hjarnu/observability
+   git clone https://github.com/hjarnu/a10_observability
    ```
 
 2. **Build a Docker image for Prometheus Exporter:**
