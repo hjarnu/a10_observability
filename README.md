@@ -44,7 +44,7 @@ Additionally, there is a Python script included for automating the update of Pro
 
 4. **Configure Prometheus:**
 
-   Place your `prometheus.yml` configuration file in the `./configuration/prometheus/` directory. The Python script included in this repository will update this configuration file with endpoints fetched from the A10 API.
+   Specify your IP addresses and job names in the`prometheus.yml` configuration file in the `./configuration/prometheus/` directory. The Python script included in this repository will update this configuration file with endpoints fetched from the A10 API.
 
 5. **Run the Stack:**
 
