@@ -52,6 +52,7 @@ services:
       - GF_RENDERING_CALLBACK_URL=https://10.10.10.3:3000/
       - GF_LOG_FILTERS=rendering:debug
       - GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE=true
+      - GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE_TIMEOUT=30s
       - GF_DATE_FORMATS_DEFAULT_TIMEZONE=Asia/Almaty
     networks:
       monitoring_network:
@@ -64,6 +65,7 @@ services:
       - IGNORE_HTTPS_ERRORS=true
       - GF_RENDERING_IGNORE_HTTPS_ERRORS=true
       - BROWSER_TZ=Asia/Aqtobe
+      - GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE_TIMEOUT=30s
       - GF_PLUGIN_RENDERING_TIMEZONE=Asia/Aqtobe
     deploy:
       resources:
