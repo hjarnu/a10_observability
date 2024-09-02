@@ -19,7 +19,7 @@ scrape_configs:
   scrape_interval: 15s
   static_configs:
   - targets:
-    - 10.10.20.5:9734
+    - 10.10.10.5:9734
 - job_name: <job name>
   metrics_path: /metrics
   metric_relabel_configs:
@@ -36,7 +36,7 @@ scrape_configs:
   scrape_interval: 15s
   static_configs:
   - targets:
-    - 10.10.20.6:9734
+    - 10.10.10.6:9734
 - job_name: <job name>
   metrics_path: /metrics
   metric_relabel_configs:
@@ -53,4 +53,4 @@ scrape_configs:
   scrape_interval: 15s
   static_configs:
   - targets:
-    - 10.10.20.7:9734
+    - 10.10.10.7:9734

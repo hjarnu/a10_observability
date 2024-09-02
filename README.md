@@ -5,14 +5,14 @@ This repository contains a setup for a monitoring stack using Docker containers.
 1. **Prometheus**: For scraping and storing metrics.
 2. **Grafana**: For visualizing and alerting based on metrics.
 3. **Grafana Image Renderer**: For rendering graphs as images, for alerts.
-4. Prometheus exporters https://github.com/a10networks/PrometheusExporter/blob/master/acos_exporter.py
+4. **Prometheus exporters**: For scraping metrics from A10 devices. The full code is located here: https://github.com/a10networks/PrometheusExporter/blob/master/acos_exporter.py
 
-Additionally, there is a Python script included for automating the update of Prometheus configuration by fetching zone details from an external API (A10 Networks).
+Additionally, there is a Python script included for automating the update of Prometheus configuration by fetching zone details from an A10 API.
 
 ## Prerequisites
 
 - Docker and Docker Compose installed on your system.
-- SSL certificates for Grafana (located at `/opt/monitoring/prod_stack/certs/`).
+- SSL certificates for Grafana (located at `./prod_stac/certs/`).
 - Python 3.x installed along with `requests` and `PyYAML` libraries.
 
 ## Getting Started
@@ -23,21 +23,30 @@ Additionally, there is a Python script included for automating the update of Pro
    git clone https://github.com/hjarnu/observability
    ```
 
-2. **Create the necessary directories and files:**
+2. **Build a Docker image for Prometheus Exporter:**
 
-   Ensure that the following directories exist on your host machine:
+   ```bash
+   docker build -t test-prometheus-exporter .
+   ```
 
-   - `/opt/monitoring/prod_stack/prometheus_data`
-   - `/opt/monitoring/prod_stack/grafana_data`
-   - `/opt/monitoring/prod_stack/certs/`
+3. **Generate certificates for Grafana, or import your own**
 
-   Make sure your SSL certificates (`grafana.crt` and `grafana.key`) are placed in `/opt/monitoring/prod_stack/certs/`.
+   Generate the certificates and place them in the certs folder:
 
-3. **Configure Prometheus:**
+   ```bash
+   openssl genrsa -out ./certs/grafana.key 2048
+   openssl req -new -key ./certs/grafana.key -out ./certs/grafana.csr
+   openssl x509 -req -days 365 -in ./certs/grafana.csr -signkey ./certs/grafana.key -out ./certs/grafana.crt
+   chmod 400 ./certs/grafana.key ./certs/grafana.crt
+   ```
+
+   Make sure your SSL certificate and key (.crt and .key) are placed in `./prod_stack/certs/`.
+
+4. **Configure Prometheus:**
 
    Place your `prometheus.yml` configuration file in the `./configuration/prometheus/` directory. The Python script included in this repository will update this configuration file with endpoints fetched from the A10 API.
 
-4. **Run the Stack:**
+5. **Run the Stack:**
 
    Run the following command to start all services:
 
@@ -47,7 +56,7 @@ Additionally, there is a Python script included for automating the update of Pro
 
    This command will pull the required Docker images and start the Prometheus, Grafana, and Renderer services.
 
-5. **Access the Services:**
+6. **Access the Services:**
 
    - **Prometheus**: `http://localhost:9090`
    - **Grafana**: `https://localhost:3001` (Grafana is configured to use HTTPS)
@@ -103,9 +112,10 @@ The Grafana Image Renderer is configured to:
 
 The `docker-compose.yml` file defines resource limits for each service to ensure stable operation:
 
-- **Prometheus**: Limited to 1 CPU and 1GB of memory.
+- **Prometheus**: Limited to 2 CPU and 1GB of memory.
 - **Grafana**: Limited to 1 CPU and 400MB of memory.
-- **Renderer**: Not explicitly limited.
+- **Renderer**: Limited to 0.5 CPU and 200MB of memory.
+- **Exporters**: Limited to 0.5 CPU and 200MB of memory
 
 ## License
 

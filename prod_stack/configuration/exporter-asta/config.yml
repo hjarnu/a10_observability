@@ -1,0 +1,8 @@
+---
+hosts:
+  <host ip>:
+    username: user
+    password: password
+log:
+  log_file: logs.log
+  log_level: INFO
