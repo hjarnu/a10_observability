@@ -49,7 +49,7 @@ services:
       - GF_SERVER_CERT_FILE=/etc/grafana/certs/grafana.crt
       - GF_SERVER_CERT_KEY=/etc/grafana/certs/grafana.key
       - GF_RENDERING_SERVER_URL=http://10.10.10.4:8081/render
-      - GF_RENDERING_CALLBACK_URL=https://10.10.10.3:3001/
+      - GF_RENDERING_CALLBACK_URL=https://10.10.10.3:3000/
       - GF_LOG_FILTERS=rendering:debug
       - GF_UNIFIED_ALERTING_SCREENSHOTS_CAPTURE=true
       - GF_DATE_FORMATS_DEFAULT_TIMEZONE=Asia/Almaty
