@@ -4,7 +4,7 @@ services:
 
   node-exporter:
     image: prom/node-exporter:latest
-    container_name: test-node-exporter
+    container_name: balbla-node-exporter
     restart: unless-stopped
     volumes:
       - /proc:/host/proc:ro
