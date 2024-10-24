@@ -21,6 +21,10 @@ Additionally, there is a Python script included for automating the update of Pro
 
    ```bash
    git clone https://github.com/hjarnu/a10_observability
+   chown -R 65534:65534 /opt/monitoring/prod_stack/prometheus_data
+   chown -R 472:472 /opt/monitoring/prod_stack/grafana_data
+   chown -R 472:472 /opt/monitoring/prod_stack/certs/grafana.crt
+   chown -R 472:472 /opt/monitoring/prod_stack/certs/grafana.key
    ```
 
 2. **Build a Docker image for Prometheus Exporter:**
