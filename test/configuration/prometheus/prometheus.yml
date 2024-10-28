@@ -3,6 +3,12 @@ scrape_configs:
   static_configs:
   - targets:
     - localhost:9090
+- job_name: grafana
+  scheme: https
+  static_configs:
+  - targets: ['https://10.10.10.3:3000']
+  tls_config:
+    insecure_skip_verify: true
 - job_name: 'node'
   static_configs:
     - targets: ['test-node-exporter:9100']
