@@ -63,7 +63,7 @@ Additionally, there is a Python script included for automating the update of Pro
 6. **Access the Services:**
 
    - **Prometheus**: `http://localhost:9090`
-   - **Grafana**: `https://localhost:3001` (Grafana is configured to use HTTPS)
+   - **Grafana**: `https://localhost:3000` (Grafana is configured to use HTTPS)
    - **Grafana Image Renderer**: The renderer will run on `http://localhost:8081`
 
 ## Python Script for Automated Configuration
