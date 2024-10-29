@@ -97,6 +97,22 @@ services:
     networks:
       monitoring_network:
         ipv4_address: 10.10.10.5
+  exporter-detector-2:
+    restart: unless-stopped
+    container_name: exporter-detector-2-prod
+    image: test-prometheus-exporter
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200M
+        reservations:
+          memory: 200M
+    volumes:
+      - ./configuration/exporter-detector-2/config.yml:/app/config.yml
+    networks:
+      monitoring_network:
+        ipv4_address: 10.10.10.8
   exporter-asta:
     restart: unless-stopped
     container_name: exporter-asta-prod

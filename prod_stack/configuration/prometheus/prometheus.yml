@@ -53,4 +53,21 @@ scrape_configs:
   scrape_interval: 15s
   static_configs:
   - targets:
+    - 10.10.10.8:9734
+- job_name: <job name>
+  metrics_path: /metrics
+  metric_relabel_configs:
+  - action: replace
+    source_labels: [api_name]
+    target_label: "api_name"
+    regex: "ddos_dst_zone_(.*)_stats"
+    replacement: "$1"
+  params:
+    api_endpoint:
+    host_ip:
+    - <IP address>
+  scheme: http
+  scrape_interval: 15s
+  static_configs:
+  - targets:
     - 10.10.10.7:9734
