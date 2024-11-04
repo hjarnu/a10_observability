@@ -89,10 +89,20 @@ def call(host):
 
                 # Parse the JSON response to get the list of zones
                 data = response.json()
-                zones = [zone['zone-name'] for zone in data.get('zone-list', [])]
+                zones = data.get('zone-list', [])
 
-                # Generate the new API endpoint values
-                api_endpoint_value = [f"/ddos/dst/zone/{zone}/stats" for zone in zones]
+                # Filter zones where operational-mode is 'idle'
+                idle_zones = [zone['zone-name'] for zone in zones if zone.get('operational-mode') == 'idle']
+                
+                # Log idle zones
+                if idle_zones:
+                    logging.info(f"Omiting Idle zones: {', '.join(idle_zones)}")
+                else:
+                    logging.info("No idle zones found.")
+
+                # Generate the new API endpoint values excluding idle zones
+                api_endpoint_value = [f"/ddos/dst/zone/{zone['zone-name']}/stats" 
+                                      for zone in zones if zone['zone-name'] not in idle_zones]
 
                 # Load the existing Prometheus configuration
                 try:

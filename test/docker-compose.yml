@@ -4,7 +4,7 @@ services:
 
   node-exporter:
     image: prom/node-exporter:latest
-    container_name: balbla-node-exporter
+    container_name: test-node-exporter
     restart: unless-stopped
     volumes:
       - /proc:/host/proc:ro
@@ -41,7 +41,7 @@ services:
       - '--web.enable-lifecycle'
       - '--storage.tsdb.retention.time=30d'
     ports:
-      - 9092:9090
+      - 9091:9090
     networks:
       test_stack_network:
         ipv4_address: 10.10.20.2
@@ -62,7 +62,7 @@ services:
         reservations:
           memory: 200M
     ports:
-      - 3002:3000
+      - 3001:3000
     environment:
 #      - GF_SERVER_PROTOCOL=https
 #      - GF_SERVER_CERT_FILE=/etc/grafana/certs/grafana.crt
