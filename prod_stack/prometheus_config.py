@@ -26,13 +26,15 @@ import os
 import yaml
 import platform    # For getting the operating system name
 import subprocess  # For executing a shell command
+from datetime import datetime
+import shutil  # For file backup
 
 #IPs
 detector_1 = "<ip1>"
 detector_2 = "<ip2>"
 
 # File to save the results
-prometheus_config_file = "./configuration/prometheus/prometheus.yml"
+prometheus_config_file = "/opt/monitoring/prod_stack/configuration/prometheus/prometheus.yml"
 
 logging.basicConfig(filename='/opt/monitoring/monitoring.log', level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -42,6 +44,17 @@ class NoAliasDumper(yaml.SafeDumper):
     def ignore_aliases(self, data):
         return True
 
+def backup_prometheus_config():
+    """
+    Create a backup of the Prometheus configuration file.
+    """
+    try:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = f"{prometheus_config_file}.bak_{timestamp}"
+        shutil.copy(prometheus_config_file, backup_file)
+        logging.info(f"Backup of Prometheus configuration created at {backup_file}")
+    except Exception as e:
+        logging.error(f"Failed to backup Prometheus configuration: {e}")
 
 def ping(host):
 
@@ -67,13 +80,7 @@ def ping(host):
 def call(host):
 
     """
-    Makes an API call to the host. Uses authentication process with username and password to get the authentication token,
-    which is used later for the call. The call is pulling the ddos destination zone information from the A10 TPS.
-    The result is a 'zone-list' dictionary, which contains the list of dictionaries, each representing the individual zone configuration.
-    Filters the zones with 'idle' operational-mode.
-    Generates a new api_endpoint list, containing '/ddos/dst/zone/zone_name/stats' values for each active zone.
-    Rewrites the api_endpoint section of the Prometheus config file.
-    Reloads the Prometheus configuration to apply the changes.
+    Makes an API call and updates the Prometheus configuration
 
     """
     # Prompt for credentials
@@ -135,6 +142,8 @@ def call(host):
                 # Generate the new API endpoint values excluding idle zones
                 api_endpoint_value = [f"/ddos/dst/zone/{zone['zone-name']}/stats" 
                                       for zone in zones if zone['zone-name'] not in idle_zones]
+
+                backup_prometheus_config()  # Create a backup before modifying the config
 
                 # Load the existing Prometheus configuration
                 try:
