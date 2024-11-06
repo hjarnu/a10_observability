@@ -6,7 +6,7 @@ scrape_configs:
 - job_name: grafana
   scheme: https
   static_configs:
-  - targets: ['https://10.10.10.3:3000']
+  - targets: ['10.10.10.3:3000']
   tls_config:
     insecure_skip_verify: true
 - job_name: 'node'

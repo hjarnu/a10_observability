@@ -1,3 +1,24 @@
+"""
+    This script pulls the zone list from the A10 TPS appliances and updates the Prometheus configuration to semi-automate the monitoring workflow.
+    The setup includes two A10 TPS appliances, containing the same zone configuration.
+    The script first attempts to connect to the first configured device; if successful, it establishes a connection to the API endpoint.
+    If the primary device is unreachable, the script tries the secondary appliance.
+
+    Once connected, the script authenticates using a username and password to retrieve an authentication token,
+    then requests the zone-list data from the A10 TPS device.
+    This response includes a 'zone-list' dictionary, where each entry represents an individual zone configuration.
+
+    The important field is 'operational-mode'. This indicates the zone's current state, which may be:
+        - 'monitor': Zone is under active DDoS protection;
+        - 'learning': Zone is in learning mode, gathering traffic statistics, but not in the active protection mode;
+        - 'idle': All activities are stopped.
+    For monitoring, only zones in 'monitor' or 'learning' modes are relevant, as 'idle' zones do not collect traffic metrics.
+    Including 'idle' zones in Prometheus and Grafana is redundant.
+    The zones that were previously active but changed mode to 'idle' would remain the Prometheus data for the configured retention period.
+    The script rewrites and saves  the endpoint section of the Prometheus configuration file, then reloads the configuration to apply changes.
+
+"""
+
 import requests
 import json
 import logging
@@ -44,11 +65,22 @@ def ping(host):
     
 
 def call(host):
+
+    """
+    Makes an API call to the host. Uses authentication process with username and password to get the authentication token,
+    which is used later for the call. The call is pulling the ddos destination zone information from the A10 TPS.
+    The result is a 'zone-list' dictionary, which contains the list of dictionaries, each representing the individual zone configuration.
+    Filters the zones with 'idle' operational-mode.
+    Generates a new api_endpoint list, containing '/ddos/dst/zone/zone_name/stats' values for each active zone.
+    Rewrites the api_endpoint section of the Prometheus config file.
+    Reloads the Prometheus configuration to apply the changes.
+
+    """
     # Prompt for credentials
     username = "<user>"
     password = "<password>"
 
-    # URLs for authentication, zone details, and logoff
+    # URLs for authentication, API call, and logoff
     auth_url = f"https://{host}/axapi/v3/auth"
     url = f"https://{host}/axapi/v3/ddos/dst/zone/"
     logoff_url = f"https://{host}/axapi/v3/logoff"
@@ -85,7 +117,7 @@ def call(host):
 
             # Check if the request was successful
             if response.status_code == 200:
-                logging.info(f"Successfull authentication: 200")
+                logging.info(f"Successful authentication: 200")
 
                 # Parse the JSON response to get the list of zones
                 data = response.json()
@@ -144,6 +176,7 @@ def call(host):
     except Exception as e:
         logging.error(f"An error occurred while trying make the API call: {e}")
         return []
+
 
 if ping(detector_1):
     logging.info(f"Detector {detector_1} is reachable. Trying to establish the API connection...")
