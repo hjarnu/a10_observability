@@ -44,6 +44,7 @@ class NoAliasDumper(yaml.SafeDumper):
     def ignore_aliases(self, data):
         return True
 
+
 def backup_prometheus_config():
     """
     Create a backup of the Prometheus configuration file.
@@ -55,6 +56,7 @@ def backup_prometheus_config():
         logging.info(f"Backup of Prometheus configuration created at {backup_file}")
     except Exception as e:
         logging.error(f"Failed to backup Prometheus configuration: {e}")
+
 
 def ping(host):
 
@@ -75,23 +77,14 @@ def ping(host):
     except Exception as e:
         logging.error(f"An error occurred while trying to ping hosts: {e}")
         return []
-    
 
-def call(host):
 
+def authentication(host, username, password):
     """
-    Makes an API call and updates the Prometheus configuration
-
+    Returns signature token
     """
-    # Prompt for credentials
-    username = "<user>"
-    password = "<password>"
-
-    # URLs for authentication, API call, and logoff
     auth_url = f"https://{host}/axapi/v3/auth"
-    url = f"https://{host}/axapi/v3/ddos/dst/zone/"
-    logoff_url = f"https://{host}/axapi/v3/logoff"
-    
+
     # Headers for the authentication request
     auth_headers = {
         "Content-Type": "application/json"
@@ -105,104 +98,98 @@ def call(host):
         }
     })
 
-    # Authenticate to get the authorization signature
     try:
-        auth_response = requests.post(auth_url, headers=auth_headers, data=auth_payload, verify=False)
+        response = requests.post(auth_url, headers=auth_headers, data=auth_payload, verify=False)
+        response.raise_for_status()
+        return response.json()["authresponse"]["signature"]
+    
+    except Exception as e:
+        logging.error(f"Authentication failed for {host}: {e}")
+        return None
 
-        if auth_response.status_code == 200:
-            auth_data = auth_response.json()
-            signature = auth_data["authresponse"]["signature"]
 
-            # Headers for the subsequent requests
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"A10 {signature}"
-            }
-
-            # Make the API call:
-            response = requests.get(url, headers=headers, verify=False)
-
-            # Check if the request was successful
-            if response.status_code == 200:
-                logging.info(f"Successful authentication: 200")
-
-                # Parse the JSON response to get the list of zones
-                data = response.json()
-                zones = data.get('zone-list', [])
-
-                # Filter zones where operational-mode is 'idle'
-                idle_zones = [zone['zone-name'] for zone in zones if zone.get('operational-mode') == 'idle']
-                
-                # Log idle zones
-                if idle_zones:
-                    logging.info(f"Omiting Idle zones: {', '.join(idle_zones)}")
-                else:
-                    logging.info("No idle zones found.")
-
-                # Generate the new API endpoint values excluding idle zones
-                api_endpoint_value = [f"/ddos/dst/zone/{zone['zone-name']}/stats" 
-                                      for zone in zones if zone['zone-name'] not in idle_zones]
-
-                backup_prometheus_config()  # Create a backup before modifying the config
-
-                # Load the existing Prometheus configuration
-                try:
-                    with open(prometheus_config_file, 'r') as file:
-                        prometheus_config = yaml.safe_load(file)
-
-                    # Update the configuration
-                    for job in prometheus_config.get('scrape_configs', []):
-                        if job.get('job_name', '').startswith('a10-tps'):
-                            job['params']['api_endpoint'] = api_endpoint_value
-
-                    # Write the updated configuration to the file
-                    with open(prometheus_config_file, 'w') as file:
-                        yaml.dump(prometheus_config, file, default_flow_style=False,Dumper=NoAliasDumper)
-
-                    # Reload Prometheus to apply the new configuration
-                    os.system("curl -X POST http://localhost:9090/-/reload")
-
-                    logging.info("Prometheus configuration updated and reloaded successfully.")
-                
-                except Exception as e:
-                    logging.error(f"Unable to write changes to the Prometheus config file :{e}")
-
-            else:
-                logging.error(f"Failed to retrieve zone data: {response.status_code}")
-                logging.error(response.text)
-
-            # Log off to end the session
-            logoff_response = requests.post(logoff_url, headers=headers, verify=False)
-            if logoff_response.status_code == 200:
-                logging.info("Successfully logged off.")
-            else:
-                logging.error(f"Failed to log off: {logoff_response.status_code}")
-
+def logoff(host, signature):
+    """
+    Log off from the API to end the session.
+    """
+    logoff_url = f"https://{host}/axapi/v3/logoff"
+    headers = {"Authorization": f"A10 {signature}"}
+    try:
+        response = requests.post(logoff_url, headers=headers, verify=False)
+        if response.status_code == 200:
+            logging.info(f"Successfully logged off from {host}.")
         else:
-            logging.error(f"Failed to authenticate: {auth_response.status_code}")
-            logging.error(auth_response.text)
-        
+            logging.error(f"Failed to log off from {host}: {response.status_code}")
     except Exception as e:
-        logging.error(f"An error occurred while trying make the API call: {e}")
-        return []
+        logging.error(f"Error logging off from {host}: {e}")
 
 
-if ping(detector_1):
-    logging.info(f"Detector {detector_1} is reachable. Trying to establish the API connection...")
+def call_api(host, signature):
+    """
+    Make the API call to fetch zones
+    """
+    url = f"https://{host}/axapi/v3/ddos/dst/zone/"
+    headers = {"Authorization": f"A10 {signature}", "Content-Type": "application/json"}
     
     try:
-        call(detector_1)
+        response = requests.get(url, headers=headers, verify=False)
+        if response.status_code == 200:
+            data = response.json()
+            zones = data.get('zone-list', [])
+            idle_zones = [zone['zone-name'] for zone in zones if zone.get('operational-mode') == 'idle']
+            if idle_zones:
+                logging.info(f"Omitting Idle zones: {', '.join(idle_zones)}")
+            api_endpoint_value = [f"/ddos/dst/zone/{zone['zone-name']}/stats" for zone in zones if zone['zone-name'] not in idle_zones]
+            update_prometheus_config(api_endpoint_value)
+        else:
+            logging.error(f"Failed to retrieve zone data from {host}: {response.status_code}")
+            logging.error(response.text)
     except Exception as e:
-        logging.error(f"An error occurred while trying to connect to the host {detector_1}: {e}")
-    
-elif ping(detector_2):
-    logging.error(f"Detector {detector_1} is not reachable. Trying to ping {detector_2}...")
-    logging.info(f"Detector {detector_2} is reachable. Trying to establish the API connection...")
+        logging.error(f"Error during API call to {host}: {e}")
 
+def update_prometheus_config(api_endpoints):
+    """
+    Update Prometheus configuration file with new API endpoints.
+    """
+    backup_prometheus_config()  # Backup before modifying
     try:
-        call(detector_2)
+        with open(prometheus_config_file, 'r') as file:
+            prometheus_config = yaml.safe_load(file)
         
+        for job in prometheus_config.get('scrape_configs', []):
+            if job.get('job_name', '').startswith('a10-tps'):
+                job['params']['api_endpoint'] = api_endpoints
+        
+        with open(prometheus_config_file, 'w') as file:
+            yaml.dump(prometheus_config, file, default_flow_style=False, Dumper=NoAliasDumper)
+        
+        os.system("curl -X POST http://localhost:9090/-/reload")
+        logging.info("Prometheus configuration updated and reloaded successfully.")
     except Exception as e:
-        logging.error(f"An error occurred while trying to connect to the host {detector_2}: {e}")
-else:
-    logging.error(f"Both detectors {detector_1} and {detector_2} are not reachable. Unable to fetch the zone list!")
+        logging.error(f"Failed to update Prometheus configuration: {e}")
+
+
+def main():
+    """
+    Main function to try connections with failover logic.
+    """
+    username = "<user>"
+    password = "<password>"
+    
+    for detector in [detector_1, detector_2]:
+        if ping(detector):
+            logging.info(f"Detector {detector} is reachable. Attempting API connection...")
+            signature = authentication(detector, username, password)
+            if signature:
+                call_api(detector, signature)
+                logoff(detector, signature)
+                return  # Exit after successful operation
+            else:
+                logging.warning(f"API connection to {detector} failed. Trying next detector...")
+        else:
+            logging.warning(f"Detector {detector} is unreachable by ping.")
+    
+    logging.error("Both detectors are unreachable or API connection failed. Unable to update configuration.")
+
+if __name__ == "__main__":
+    main()
